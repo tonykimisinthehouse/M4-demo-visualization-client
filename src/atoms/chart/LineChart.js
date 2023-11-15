@@ -2,14 +2,7 @@
 import * as d3 from "d3";
 import { useEffect } from "react";
 
-function LineChart({
-  svg_class,
-  width,
-  height,
-  data = [],
-  xVariable,
-  yVariable,
-}) {
+function LineChart({ id, width, height, data = [], xVariable, yVariable }) {
   const yMinValue = d3.min(data, (d) => d?.[yVariable]);
   const yMaxValue = d3.max(data, (d) => d?.[yVariable]);
   const xMinValue = d3.min(data, (d) => d?.[xVariable]);
@@ -34,8 +27,14 @@ function LineChart({
 
   return (
     <div style={{ width: width, height: height }}>
-      <svg viewBox={`0 0 ${width} ${height}`} className={svg_class}>
-        <path d={d} fill="None" stroke="#111" strokeWidth={"1.5"} />
+      <svg viewBox={`0 0 ${width} ${height}`} className={`${id}_svg`}>
+        <path
+          d={d}
+          fill="None"
+          stroke="#111"
+          strokeWidth={"1.5"}
+          id={`${id}_path`}
+        />
       </svg>
     </div>
   );

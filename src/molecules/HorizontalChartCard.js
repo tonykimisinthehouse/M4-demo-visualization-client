@@ -2,6 +2,7 @@ import LineChart from "../atoms/chart/LineChart";
 import { useCallback } from "react";
 
 function HorizontalChartCard({
+  id,
   datasetName,
   dataReductionMethod,
   totalTime,
@@ -13,9 +14,8 @@ function HorizontalChartCard({
   setHeight,
   width,
   setWidth,
+  loaded,
 }) {
-  const id = dataReductionMethod.replace(/ /g, "_");
-
   const measuredRef = useCallback((node) => {
     if (node !== null) {
       setHeight(node.getBoundingClientRect().height);
@@ -24,7 +24,7 @@ function HorizontalChartCard({
   }, []);
 
   return (
-    <div style={{ display: "flex", minHeight: 540, maxHeight: "48vh" }}>
+    <div style={{ display: "flex", minHeight: 380, maxHeight: "48vh" }}>
       <div
         style={{
           flex: 3,
@@ -44,7 +44,12 @@ function HorizontalChartCard({
         <div
           style={{ fontWeight: 500, fontSize: "2.5rem", alignContent: "end" }}
         >
-          {totalTime} <span style={{ fontWeight: 300 }}>SECONDS</span>
+          {loaded && (
+            <>
+              {totalTime} <span style={{ fontWeight: 300 }}>SECONDS</span>
+            </>
+          )}{" "}
+          {!loaded && <>Loading...</>}
         </div>
         <div style={{ fontSize: "1.225rem" }}>
           {data?.length?.toLocaleString()} TUPLES
@@ -52,7 +57,7 @@ function HorizontalChartCard({
       </div>
       <div ref={measuredRef} style={{ flex: 7, border: "2px solid #000" }}>
         <LineChart
-          svg_class={`${id}_svg`}
+          id={`${id}`}
           data={data}
           xVariable={xVariable}
           yVariable={yVariable}
