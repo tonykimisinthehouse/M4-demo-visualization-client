@@ -15,6 +15,11 @@ function HorizontalChartCard({
   width,
   setWidth,
   loaded,
+  additional_information,
+  dssim,
+  ssim,
+  chartStart,
+  chartEnd,
 }) {
   const measuredRef = useCallback((node) => {
     if (node !== null) {
@@ -32,6 +37,7 @@ function HorizontalChartCard({
           minWidth: 380,
           color: "#E6E6E6",
           border: "2px solid #E6E6E6",
+          padding: "1.25rem",
           // display: "flex",
           // flexDirection: "column",
           // alignContent: "center",
@@ -53,7 +59,14 @@ function HorizontalChartCard({
         </div>
         <div style={{ fontSize: "1.225rem" }}>
           {data?.length?.toLocaleString()} TUPLES
-        </div>
+        </div>{" "}
+        <div style={{ marginTop: 32 }} />
+        {additional_information &&
+          Object.entries(additional_information).map(([k, v], i) => (
+            <div style={{ fontSize: "1.225rem" }}>
+              {k}: {v?.toFixed(3)}
+            </div>
+          ))}
       </div>
       <div ref={measuredRef} style={{ flex: 7, border: "2px solid #000" }}>
         <LineChart
@@ -63,6 +76,8 @@ function HorizontalChartCard({
           yVariable={yVariable}
           width={width}
           height={height}
+          chartStart={chartStart}
+          chartEnd={chartEnd}
         />
       </div>
     </div>

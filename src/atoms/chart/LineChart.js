@@ -2,15 +2,22 @@
 import * as d3 from "d3";
 import { useEffect } from "react";
 
-function LineChart({ id, width, height, data = [], xVariable, yVariable }) {
+function LineChart({
+  id,
+  width,
+  height,
+  data = [],
+  xVariable,
+  yVariable,
+  chartStart,
+  chartEnd,
+}) {
   const yMinValue = d3.min(data, (d) => d?.[yVariable]);
   const yMaxValue = d3.max(data, (d) => d?.[yVariable]);
-  const xMinValue = d3.min(data, (d) => d?.[xVariable]);
-  const xMaxValue = d3.max(data, (d) => d?.[xVariable]);
 
   const xScale = d3
     .scaleLinear()
-    .domain([xMinValue, xMaxValue])
+    .domain([chartStart, chartEnd])
     .range([0, width]);
 
   // create scale for y axis

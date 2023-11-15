@@ -7,11 +7,12 @@ import toImg from "react-svg-to-image";
 import "./App.css";
 import { useCallback, useEffect, useState } from "react";
 import HorizontalChartCard from "./molecules/HorizontalChartCard";
-import { tr } from "date-fns/locale";
 
-// const backend_url = "http://localhost:8000";
+import { base64ImageToBlob } from "./utils";
+
+const backend_url = "http://localhost:8000";
 // const backend_url = "http://18.222.117.210:8000";
-const backend_url = "http://3.138.181.40:8000";
+// const backend_url = "http://3.138.181.40:8000";
 
 function App() {
   // const [fromTime, setFromTime] = useState(1698638400);
@@ -23,12 +24,16 @@ function App() {
 
   const [m4Loaded, setM4Loaded] = useState(false);
   const [rawLoaded, setRawLoaded] = useState(false);
-  const [aggregationResponseTime, setAggregationResponseTime] = useState(0);
-  const [rawResponseTime, setRawResponseTime] = useState(0);
+  const [m4QueryExecutionTime, setM4QueryExecutionTime] = useState(0);
+  const [rawQueryExecutionTime, setRawQueryExecutionTime] = useState(0);
+  const [m4TotalTime, setM4TotalTime] = useState(0);
+  const [rawTotalTime, setRawTotalTime] = useState(0);
   const [value, onChange] = useState([
     new Date(1698638400 * 1000),
-    new Date(1698724800 * 1000),
+    new Date(1698652800 * 1000),
   ]);
+  const [DSSIM, setDSSIM] = useState(null);
+  const [SSIM, setSSIM] = useState(null);
 
   const m4_id = `M4_Aggregation_${value[0]?.getTime() / 1000}_${
     value[1]?.getTime() / 1000
@@ -55,12 +60,14 @@ function App() {
           );
           const jsonData = await response.json();
           // console.log(jsonData.map((x) => ({ value: x[0], label: x[1] })));
-          setData(jsonData?.map((x) => ({ x: x[0], y: x[1] })));
+          setData(jsonData?.records);
+          setM4QueryExecutionTime(jsonData?.query_execution_time);
+
           // while (document.getElementById(`${m4_id}_path`) === null) {}
           let interval_id = setInterval(() => {
             if (document.getElementById(`${m4_id}_path`) !== null) {
               const secSpent = (Date.now() - start_time) / 1000;
-              setAggregationResponseTime(secSpent);
+              setM4TotalTime(secSpent);
               setM4Loaded(true);
               clearInterval(interval_id);
             }
@@ -87,12 +94,13 @@ function App() {
         const secSpent = (Date.now() - start_time) / 1000;
         const jsonData = await response.json();
         // console.log(jsonData.map((x) => ({ value: x[0], label: x[1] })));
-        setRawData(jsonData.map((x) => ({ x: x[0], y: x[1] })));
+        setRawData(jsonData?.records);
+        setRawQueryExecutionTime(jsonData?.query_execution_time);
         // while (document.getElementById(`${raw_data_id}_path`) === null) {}
         let interval_id = setInterval(() => {
           if (document.getElementById(`${raw_data_id}_path`) !== null) {
             const secSpent = (Date.now() - start_time) / 1000;
-            setRawResponseTime(secSpent);
+            setRawTotalTime(secSpent);
             setRawLoaded(true);
             clearInterval(interval_id);
           }
@@ -104,43 +112,82 @@ function App() {
 
     fetchData();
   }, [raw_data_id, value]);
+  useEffect(() => {
+    setDSSIM(null);
+    setSSIM(null);
+  }, [value]);
+  useEffect(() => {
+    let interval_id = setInterval(() => {
+      if (m4Loaded && rawLoaded) {
+        fetch(
+          `${backend_url}/record_query_performance?num_of_underlying_rows=${rawData?.length}&base_execution_time=${rawQueryExecutionTime}&base_total_time=${rawTotalTime}&m4_execution_time=${m4QueryExecutionTime}5&m4_total_time=${m4TotalTime}`,
+          {
+            method: "POST",
+          }
+        );
+        clearInterval(interval_id);
+      }
+    }, 1000);
+  }, [
+    m4Loaded,
+    m4QueryExecutionTime,
+    m4TotalTime,
+    m4_id,
+    rawData?.length,
+    rawLoaded,
+    rawQueryExecutionTime,
+    rawTotalTime,
+    raw_data_id,
+    value,
+  ]);
 
-  // useEffect(() => {
-  //   let interval_id = setInterval(() => {
-  //     if (
-  //       document.getElementById(`${m4_id}_path`) !== null &&
-  //       document.getElementById(`${raw_data_id}_path`) !== null &&
-  //       m4Loaded &&
-  //       rawLoaded
-  //     ) {
-  //       saveChart();
-  //       clearInterval(interval_id);
-  //     }
-  //   }, 1000);
-  // }, [m4Loaded, m4_id, rawLoaded, raw_data_id, value]);
-  //
-  const saveChart = useCallback(() => {
-    let m4ChartImage;
-    let rawChartImage;
-    toImg(`.${m4_id}_svg`, `sample-M4_Aggregation`, {
+  const computeEvaluationMetrics = useCallback(async () => {
+    const m4ChartImage = await toImg(`.${m4_id}_svg`, `sample-M4_Aggregation`, {
       scale: 1,
       format: "jpg",
       quality: 1,
-      download: true,
-    }).then((fileData) => {
-      m4ChartImage = fileData;
-      //do something with the data
+      download: false,
     });
-    toImg(`.${raw_data_id}_svg`, `sample-Raw_Data`, {
-      scale: 1,
-      format: "jpg",
-      quality: 1,
-      download: true,
-    }).then((fileData) => {
-      rawChartImage = fileData;
-      //do something with the data
-    });
-  }, [m4_id, raw_data_id]);
+    const rawChartImage = await toImg(
+      `.${raw_data_id}_svg`,
+      `sample-Raw_Data`,
+      {
+        scale: 1,
+        format: "jpg",
+        quality: 1,
+        download: false,
+      }
+    );
+    const formData = new FormData();
+    formData.append(
+      "image_1",
+      new File([base64ImageToBlob(m4ChartImage)], `sample-M4_Aggregation`, {
+        type: "image/png",
+      })
+    );
+    formData.append(
+      "image_2",
+      new File([base64ImageToBlob(rawChartImage)], `sample-Raw_Data`, {
+        type: "image/png",
+      })
+    );
+
+    const res = await fetch(`${backend_url}/compute_dssim`, {
+      method: "POST",
+      body: formData,
+    }).then((res) => res.json());
+    await fetch(
+      `${backend_url}/record_visualization_quality?num_of_underlying_rows=${rawData?.length}&dssim=${res.dssim}&ssim=${res.ssim}`,
+      {
+        method: "POST",
+
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+    setDSSIM(res.dssim);
+    setSSIM(res.ssim);
+    // alert(JSON.stringify(`${res.dssim}, status: ${res.status}`));
+  }, [m4_id, rawData?.length, raw_data_id]);
 
   return (
     <div
@@ -176,36 +223,51 @@ function App() {
         <div>
           <DateTimeRangePicker onChange={onChange} value={value} />
         </div>
-        <button onClick={() => saveChart()}>Compute DSSIM</button>
+        <button onClick={() => computeEvaluationMetrics()}>
+          Compute DSSIM
+        </button>
       </div>
 
       <HorizontalChartCard
         datasetName={"SPDR S&P 500 Trades"}
         dataReductionMethod={"M4_Aggregation"}
-        totalTime={aggregationResponseTime}
+        totalTime={m4TotalTime}
         data={data}
-        xVariable={"x"}
-        yVariable={"y"}
+        xVariable={"0"}
+        yVariable={"1"}
         height={height}
         setHeight={setHeight}
         width={width}
         setWidth={setWidth}
         id={m4_id}
         loaded={m4Loaded}
+        additional_information={{
+          ...(m4Loaded ? { "Query Execution Time": m4QueryExecutionTime } : {}),
+          ...(DSSIM ? { DSSIM: DSSIM, SSIM: SSIM } : {}),
+        }}
+        chartStart={Math.round(value[0].getTime() / 1000)}
+        chartEnd={Math.round(value[1].getTime() / 1000)}
       />
       <HorizontalChartCard
         datasetName={"SPDR S&P 500 Trades"}
         dataReductionMethod={"Raw_Data"}
         data={rawData}
-        totalTime={rawResponseTime}
-        xVariable={"x"}
-        yVariable={"y"}
+        totalTime={rawTotalTime}
+        xVariable={"0"}
+        yVariable={"1"}
         height={height}
         setHeight={setHeight}
         width={width}
         setWidth={setWidth}
         id={raw_data_id}
         loaded={rawLoaded}
+        additional_information={{
+          ...(rawLoaded
+            ? { "Query Execution Time": rawQueryExecutionTime }
+            : {}),
+        }}
+        chartStart={Math.round(value[0].getTime() / 1000)}
+        chartEnd={Math.round(value[1].getTime() / 1000)}
       />
       {/*<input*/}
       {/*  type={"number"}*/}
@@ -226,7 +288,7 @@ function App() {
       {/*  xVariable={"x"}*/}
       {/*  yVariable={"y"}*/}
       {/*/>*/}
-      {/*{aggregationResponseTime}*/}
+      {/*{m4TotalTime}*/}
       {/*<LineChart*/}
       {/*  width={500}*/}
       {/*  height={300}*/}
