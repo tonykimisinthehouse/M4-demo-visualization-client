@@ -10,9 +10,9 @@ import HorizontalChartCard from "./molecules/HorizontalChartCard";
 
 import { base64ImageToBlob } from "./utils";
 
-const backend_url = "http://localhost:8000";
+// const backend_url = "http://localhost:8000";
 // const backend_url = "http://18.222.117.210:8000";
-// const backend_url = "http://3.138.181.40:8000";
+const backend_url = "http://3.138.181.40:8000";
 
 function App() {
   // const [fromTime, setFromTime] = useState(1698638400);
