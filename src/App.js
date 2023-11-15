@@ -2,14 +2,15 @@ import DateTimeRangePicker from "@wojtekmaj/react-datetimerange-picker";
 import "@wojtekmaj/react-datetimerange-picker/dist/DateTimeRangePicker.css";
 import "react-calendar/dist/Calendar.css";
 import "react-clock/dist/Clock.css";
+import toImg from "react-svg-to-image";
 
-import logo from "./logo.svg";
 import "./App.css";
 import { useEffect, useState } from "react";
 import HorizontalChartCard from "./molecules/HorizontalChartCard";
 
 // const backend_url = "http://localhost:8000";
-const backend_url = "http://18.222.117.210:8000";
+// const backend_url = "http://18.222.117.210:8000";
+const backend_url = "http://3.138.181.40:8000";
 
 function App() {
   // const [fromTime, setFromTime] = useState(1698638400);
@@ -25,6 +26,25 @@ function App() {
     new Date(1698638400 * 1000),
     new Date(1698724800 * 1000),
   ]);
+
+  const saveChart = () => {
+    toImg(`.M4_Aggregation_svg`, `sample-M4_Aggregation`, {
+      scale: 1,
+      format: "jpg",
+      quality: 1,
+      download: true,
+    }).then((fileData) => {
+      //do something with the data
+    });
+    toImg(`.Raw_Data_svg`, `sample-Raw_Data`, {
+      scale: 1,
+      format: "jpg",
+      quality: 1,
+      download: true,
+    }).then((fileData) => {
+      //do something with the data
+    });
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -98,13 +118,16 @@ function App() {
         <div style={{ display: "flex", alignItems: "center" }}>
           Comparing M4 with Others
         </div>
-        <div>
-          <DateTimeRangePicker onChange={onChange} value={value} />
+        <div style={{ display: "flex" }}>
+          <div>
+            <DateTimeRangePicker onChange={onChange} value={value} />
+          </div>
+          <button onClick={() => saveChart()}>Compute DSSIM</button>
         </div>
       </div>
       <HorizontalChartCard
         datasetName={"SPDR S&P 500 Trades"}
-        dataReductionMethod={"M4 Aggregation"}
+        dataReductionMethod={"M4_Aggregation"}
         totalTime={aggregationResponseTime}
         data={data}
         xVariable={"x"}
@@ -116,7 +139,7 @@ function App() {
       />
       <HorizontalChartCard
         datasetName={"SPDR S&P 500 Trades"}
-        dataReductionMethod={"Raw Data"}
+        dataReductionMethod={"Raw_Data"}
         data={rawData}
         totalTime={rawResponseTime}
         xVariable={"x"}

@@ -1,6 +1,5 @@
 import LineChart from "../atoms/chart/LineChart";
-import { useCallback, useRef, useState } from "react";
-import toImg from "react-svg-to-image";
+import { useCallback } from "react";
 
 function HorizontalChartCard({
   datasetName,
@@ -23,17 +22,6 @@ function HorizontalChartCard({
       setWidth(node.getBoundingClientRect().width);
     }
   }, []);
-
-  const saveChart = () => {
-    toImg(`.${id}_svg`, `sample-${id}`, {
-      scale: 1,
-      format: "jpg",
-      quality: 1,
-      download: true,
-    }).then((fileData) => {
-      //do something with the data
-    });
-  };
 
   return (
     <div style={{ display: "flex", minHeight: 540, maxHeight: "48vh" }}>
@@ -61,7 +49,6 @@ function HorizontalChartCard({
         <div style={{ fontSize: "1.225rem" }}>
           {data?.length?.toLocaleString()} TUPLES
         </div>
-        <button onClick={() => saveChart()}>Save Chart</button>
       </div>
       <div ref={measuredRef} style={{ flex: 7, border: "2px solid #000" }}>
         <LineChart
